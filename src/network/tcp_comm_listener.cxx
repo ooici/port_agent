@@ -122,6 +122,7 @@ bool TCPCommListener::isConfigured() {
  ******************************************************************************/
 bool TCPCommListener::initialize() {
 	int fflags;
+	int optval;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
     int retval;
@@ -137,6 +138,11 @@ bool TCPCommListener::initialize() {
 
 	if(!newsock)
 		throw SocketCreateFailure("socket create failure");
+
+	optval = 1;
+	if (0 > setsockopt(newsock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval)) {
+	    throw SocketCreateFailure("setsockopt SO_REUSADDR failure");
+	}
 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;

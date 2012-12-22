@@ -62,6 +62,8 @@ PortAgentConfig::PortAgentConfig(int argc, char* argv[]) {
     m_instrumentConnectionType = TYPE_UNKNOWN;
     
     // Connection settings
+    m_bDevicePathChanged = true;
+    m_bSerialSettingsChanged = true;
     m_baud = 0;
     m_stopbits = 1;
     m_databits = 8;
@@ -263,7 +265,7 @@ bool PortAgentConfig::parse(const string &commands) {
         LOG(DEBUG) << "Config CMD: " << cmd;
         
         if(!processCommand(cmd)) {
-            LOG(DEBUG) << "failed to parse: " << cmd;
+            LOG(ERROR) << "failed to parse: " << cmd;
             return false;
         }
     }
@@ -410,6 +412,36 @@ string PortAgentConfig::getConfig() {
 //////
 // Set Methods
 //////
+/******************************************************************************
+ * Method: setInstrumentConnectionType
+ * Description: Set the configuration instrument connection type
+ * Return:
+ *     return true if the type was set correctly, otherwise false for unknown
+ *     types.
+ *****************************************************************************/
+bool PortAgentConfig::setInstrumentBreakDuration(const string &param) {
+    m_breakDuration = 0;
+    bool bReturnCode = true;
+
+    if (0 == param.size()) {
+        LOG(ERROR) << "break duration not specified; using 0.";
+        bReturnCode = false;
+    }
+    else {
+        const char* v = param.c_str();
+        int value = atoi(v);
+        if (value < 0) {
+            LOG(ERROR) << "attempt to set break duration to a negative.  using 0 instead.";
+            value = 0;
+            bReturnCode = false;
+        }
+        m_breakDuration = value;
+    }
+
+    LOG(INFO) << "set break duration to " << m_breakDuration;
+    return bReturnCode;
+}
+
 /******************************************************************************
  * Method: setInstrumentConnectionType
  * Description: Set the configuration instrument connection type
@@ -688,6 +720,25 @@ bool PortAgentConfig::setLogLevel(const string &param) {
 }
 
 /******************************************************************************
+ * Method: setDevice
+ * Description: Set the device path
+ * Return:
+ *     return true if set correctly, otherwise false.
+ *****************************************************************************/
+bool PortAgentConfig::setDevicePath(const string &param) {
+    bool    bReturnCode = true;
+    string  devicePath = param;
+
+    if (!param.size() > 0) {
+        bReturnCode = false;
+    }
+    else {
+        m_devicePath = devicePath;
+    }
+    return bReturnCode;
+}
+
+/******************************************************************************
  * Method: setBaud
  * Description: Change the baud
  * Return:
@@ -925,9 +976,6 @@ bool PortAgentConfig::processCommand(const string & command) {
     else if( command == "ping" )
         addCommand(CMD_PING);
         
-    else if( command == "break" )
-        addCommand(CMD_BREAK);
-        
     else if( command == "shutdown" )
         addCommand(CMD_SHUTDOWN);
         
@@ -936,6 +984,11 @@ bool PortAgentConfig::processCommand(const string & command) {
     // Check for parameters
     ///////////////////////////
     
+    else if(cmd == "break" ) {
+        addCommand(CMD_BREAK);
+        return setInstrumentBreakDuration(param);
+    }
+
     else if(cmd == "instrument_type") {
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setInstrumentConnectionType(param);
@@ -1014,27 +1067,43 @@ bool PortAgentConfig::processCommand(const string & command) {
         m_instrumentAddr = param;
     }
     
+    else if(cmd == "device_path") {
+        m_bDevicePathChanged = true;
+        addCommand(CMD_COMM_CONFIG_UPDATE);
+        return setDevicePath(param);
+    }
+
+    // For baud, stopbits, databits, parity, and flow we set the
+    // m_bSerialSettingsChanged flag; if just the serial settings
+    // have changed (and not the device_path), we don't want to
+    // close the device driver but rather just reinitialize the
+    // serial settings.
     else if(cmd == "baud") {
+        m_bSerialSettingsChanged = true;
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setBaud(param);
     }
     
     else if(cmd == "stopbits") {
+        m_bSerialSettingsChanged = true;
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setStopbits(param);
     }
     
     else if(cmd == "databits") {
+        m_bSerialSettingsChanged = true;
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setDatabits(param);
     }
     
     else if(cmd == "parity") {
+        m_bSerialSettingsChanged = true;
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setParity(param);
     }
     
     else if(cmd == "flow") {
+        m_bSerialSettingsChanged = true;
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setFlow(param);
     }

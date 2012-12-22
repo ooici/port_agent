@@ -6,6 +6,7 @@ noinst_LIBRARIES= libport_agent_connection.a
 
 libport_agent_connection_a_SOURCES = connection.cxx connection.h \
                                      instrument_tcp_connection.cxx instrument_tcp_connection.h \
+                                     instrument_serial_connection.cxx instrument_serial_connection.h \
                                      observatory_connection.cxx observatory_connection.h
 
 libport_agent_connection_a_CXXFLAGS = -I$(top_builddir)/src

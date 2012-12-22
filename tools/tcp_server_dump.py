@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # This tool it used to test TCP clients.  It listens on a tcp port and 
 # allows clients to connect.  Bytes are read a single character at a time

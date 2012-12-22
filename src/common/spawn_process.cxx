@@ -17,6 +17,7 @@
 #include <sstream>
 #include <string>
 #include <string.h>
+#include <errno.h>
 
 using namespace std;
 using namespace logger;
@@ -125,12 +126,15 @@ bool SpawnProcess::run() {
     LOG(DEBUG) << "addclose result: " << result;
     
     result = posix_spawnp(&pid, m_cmd.c_str(), &file_actions, NULL, argv, NULL);
-    LOG(DEBUG) << "posix_spawn result: " << result << " PID: " << m_pid;
     
-    if(result == 0) 
+    if(result == 0) {
         m_pid = pid;
-    else
+    	LOG(DEBUG) << "posix_spawn successful: " << " PID: " << m_pid;
+    }
+    else {
+        LOG(INFO) << "posix_spawn result: " << strerror(result);
         throw LaunchCommandFailed();
+    }
     
     
     // Garbage collection

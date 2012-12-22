@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Utility that accepts TCP socket connections and spits out a 
 # random stream of data.

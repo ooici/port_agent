@@ -61,7 +61,7 @@ unsigned int DaemonProcess::pid() {
 bool DaemonProcess::start() {
     duplicate_check();
     
-    if(no_daemon()) {
+    if (no_daemon()) {
         LOG(INFO) << "Running in single thread";
         return run();
     } else {

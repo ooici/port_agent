@@ -138,7 +138,7 @@ namespace logger {
 		static string ToString(TLogLevel level);
 
 		// Write the current log buffer to the file
-		static void Flush();
+		void Flush();
 
 		// Write a message to the log file right away
 		static void WriteLog(string message);
@@ -156,7 +156,7 @@ namespace logger {
 	protected:
 		static Logger* m_pInstance;
 
-		ostringstream* m_sLogoutStream;
+		ostringstream m_sLogoutStream;
 		ofstream* m_sLogfileStream;
 
                 string m_sCallerFile;

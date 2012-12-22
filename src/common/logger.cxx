@@ -81,7 +81,6 @@ Logger::Logger()
     m_bRaiseErrors = false;
     m_pException = NULL;
     m_iLastLogDate = 0;
-    m_sLogoutStream = new ostringstream();
     m_sLogfileStream = NULL;
 }
 
@@ -151,12 +150,8 @@ void Logger::Flush() {
     Logger* instance = Logger::Instance();
     instance->clearError();
     
-    WriteLog(instance->m_sLogoutStream->str());
+    WriteLog(m_sLogoutStream.str());
     
-    if(instance->m_sLogoutStream)
-        delete instance->m_sLogoutStream;
-        
-    instance->m_sLogoutStream = new ostringstream();
 }
 
 /******************************************************************************
@@ -356,18 +351,17 @@ OOIException* Logger::GetError() {
 ostringstream& Logger::Get(TLogLevel level, const string &file, int line)
 {
     Logger* instance = Logger::Instance();
-    ostringstream *os = instance->m_sLogoutStream;
     
     if(level <= GetLogLevel()) {
-        *os << instance->nowTime() << " " << file << " " << " [" << line << "] ";
-        *os << " " << instance->levelToString(level) << ": ";
+        m_sLogoutStream << instance->nowTime() << " " << file << " " << " [" << line << "] ";
+        m_sLogoutStream << " " << instance->levelToString(level) << ": ";
     
         // Indent debug messages
 	if(level < MESG && level >= DEBUG)
-            *os << string(level > DEBUG ? level - DEBUG : 0, '\t');
+	    m_sLogoutStream << string(level > DEBUG ? level - DEBUG : 0, '\t');
     }
     
-    return *os;
+    return m_sLogoutStream;
 }
 
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Tool to write to a TCP socket.  Read from STDIN and dump
 # to a TCP socket.  

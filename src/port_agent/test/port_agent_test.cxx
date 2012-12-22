@@ -82,7 +82,7 @@ class PortAgentUnitTest : public testing::Test {
                 SpawnProcess process(cmd.str(), 8, "-v", "-v", "-v", "-v", "-v", "-v", "-p",
                 portStr.str().c_str()); 
 
-                LOG(INFO) << "Start TCP Echo Server: " << process.cmd_as_string();
+                LOG(INFO) << "Start Port Agent: " << process.cmd_as_string();
 
                 process.run();
                 sleep(1);
@@ -95,7 +95,7 @@ class PortAgentUnitTest : public testing::Test {
         }
     
         void writeConfig(const string &filename, const string &config = "") {
-			stringstream cmd;
+            stringstream cmd;
             
             if(config.length())
                 cmd << config;
@@ -107,14 +107,14 @@ class PortAgentUnitTest : public testing::Test {
                     << "command_port " << TEST_OB_CMD_PORT << endl;
                     
             LOG(DEBUG) << "Port agent config: " << cmd.str();
-			
-			create_file(filename.c_str(), cmd.str().c_str());
-		}
-		
-		void configurePortAgent(const string &config = "") {
+            
+            create_file(filename.c_str(), cmd.str().c_str());
+        }
+        
+        void configurePortAgent(const string &config = "") {
             stringstream shell;
             
-			writeConfig(CONFIG_FILE, config);
+            writeConfig(CONFIG_FILE, config);
             
             shell << TOOLSDIR << "/tcp_client_write.py";
             
@@ -126,9 +126,9 @@ class PortAgentUnitTest : public testing::Test {
             process.run();
             
             while(process.is_running()) {
-        		LOG(DEBUG) << "Waiting for client process die.";
-		        sleep(1);
-	        }
+                LOG(DEBUG) << "Waiting for client process die.";
+                sleep(1);
+            }
         }
         
         string commandPortAgent(const string &cmd = "") {
@@ -151,9 +151,9 @@ class PortAgentUnitTest : public testing::Test {
             process.run();
             
             while(process.is_running()) {
-        		LOG(DEBUG) << "Waiting for client process die.";
-		        sleep(1);
-	        }
+                LOG(DEBUG) << "Waiting for client process die.";
+                sleep(1);
+            }
             
             LOG(DEBUG2) << "process response: " << response;
             response = read_file(RESPONSE_FILE);
@@ -180,20 +180,20 @@ class PortAgentUnitTest : public testing::Test {
             process.run();
             
             while(process.is_running()) {
-        		LOG(DEBUG) << "Waiting for client process die.";
-		        sleep(1);
-	        }
+                LOG(DEBUG) << "Waiting for client process die.";
+                sleep(1);
+            }
         }
         
         virtual void TearDown() {
             LOG(INFO) << "Tear down test";
-	    
+        
             while(m_oProcess.is_running()) {
-        		LOG(DEBUG) << "Waiting for client to die.";
-		        sleep(1);
-	        }
-	    
-	        LOG(DEBUG) << "echo client process complete.";
+                LOG(DEBUG) << "Waiting for client to die.";
+                sleep(1);
+            }
+        
+            LOG(DEBUG) << "echo client process complete.";
             stopPortAgent();
         }
     
@@ -204,32 +204,38 @@ class PortAgentUnitTest : public testing::Test {
         void startTCPEchoServer() {
             stringstream cmd;
             cmd << TOOLSDIR << "/tcp_server_echo.py";
+            //cmd << TOOLSDIR << "/testme.py";
             stringstream portStr;
             portStr << TEST_IN_DATA_PORT;
 
+            /***
+            SpawnProcess process(cmd.str());
+             ***/
+
             SpawnProcess process(cmd.str(), 5, "-s", "-p",
-				 portStr.str().c_str(), "-t",
-				 "5" ); 
+                 portStr.str().c_str(), "-t",
+                 "5" );
 
             LOG(INFO) << "Start TCP Echo Server: " << process.cmd_as_string();
-	        process.set_output_file(SERVER_LOG);
-	
+            process.set_output_file(SERVER_LOG);
+    
             bool result = process.run();
             sleep(1);
         
-	    m_oProcess = process;
-	}
+        m_oProcess = process;
+    }
             
         void stopTCPClientDump() {
-			m_oDumpProcess;
+            m_oDumpProcess;
             while(m_oDumpProcess.is_running()) {
-        		LOG(DEBUG) << "Waiting for process die.";
-		        sleep(1);
-	        }
-			
-			LOG(DEBUG) << "Dump output: " << read_file(DUMP_FILE);
-		}
-		
+                LOG(DEBUG) << "Waiting for process die.";
+                sleep(1);
+            }
+            
+            LOG(DEBUG) << "---->>> DHE: this is so weird.";
+            LOG(DEBUG) << "Dump output: " << read_file(DUMP_FILE);
+        }
+        
         void startTCPClientDump(uint16_t port, const string &hostname, const string &file, uint16_t timeout = 10) {
             stringstream cmd;
             
@@ -239,38 +245,38 @@ class PortAgentUnitTest : public testing::Test {
 
             stringstream timeoutStr;
             timeoutStr << timeout;
-			
-			remove_file(DUMP_FILE);
+            
+            remove_file(DUMP_FILE);
 
             SpawnProcess process(cmd.str(), 8,
-									"-t", timeoutStr.str().c_str(),
-								    "-n", hostname.c_str(), 
+                                    "-t", timeoutStr.str().c_str(),
+                                    "-n", hostname.c_str(), 
                                     "-f", file.c_str(),
-									"-p", portStr.str().c_str()
-			);
+                                    "-p", portStr.str().c_str()
+            );
 
             LOG(INFO) << "Start TCP Dump Client: " << process.cmd_as_string();
-	        process.set_output_file(DUMP_FILE);
-	
-	        LOG(DEBUG) << "Program output: " << DUMP_FILE;
-	        LOG(DEBUG) << "Response file: " << file;
-			
+            process.set_output_file(DUMP_FILE);
+    
+            LOG(DEBUG) << "Program output: " << DUMP_FILE;
+            LOG(DEBUG) << "Response file: " << file;
+            
             bool result = process.run();
-			
-			m_oDumpProcess = process;
+            
+            m_oDumpProcess = process;
         }
-	
-	    string getDataFile() {
+    
+        string getDataFile() {
             stringstream file;
             file << "/var/ooi/port_agent/port_agent_" << TEST_OB_CMD_PORT << "."
-			     << ".data";
+                 << ".data";
         
-		    return file.str();
-		}
-	
+            return file.str();
+        }
+    
         protected:
-	    SpawnProcess m_oProcess;
-	    SpawnProcess m_oDumpProcess;
+        SpawnProcess m_oProcess;
+        SpawnProcess m_oDumpProcess;
 };
 
 
@@ -282,13 +288,13 @@ class PortAgentUnitTest : public testing::Test {
 TEST_F(PortAgentUnitTest, DISABLED_StartUpWithConfigFile) {
     try {
         string response;
-		string datafile = getDataFile();
+        string datafile = getDataFile();
         
-		remove_file(RESPONSE_FILE);
-		remove_file(CONFIG_FILE);
-		
-		writeConfig(CONFIG_FILE);
-		
+        remove_file(RESPONSE_FILE);
+        remove_file(CONFIG_FILE);
+        
+        writeConfig(CONFIG_FILE);
+        
         startPortAgent();
     }
     catch(exception &e) {
@@ -300,12 +306,13 @@ TEST_F(PortAgentUnitTest, DISABLED_StartUpWithConfigFile) {
 
 /* Test Startup */
 TEST_F(PortAgentUnitTest, DISABLED_StartUp) {
+//TEST_F(PortAgentUnitTest, StartUp) {
     try {
         string response;
-		string datafile = getDataFile();
+        string datafile = getDataFile();
         
-		remove_file(RESPONSE_FILE);
-		
+        remove_file(RESPONSE_FILE);
+        
         startTCPEchoServer();
         startPortAgent();
         configurePortAgent();
@@ -314,8 +321,8 @@ TEST_F(PortAgentUnitTest, DISABLED_StartUp) {
         startTCPClientDump(atoi(TEST_OB_CMD_PORT), "localhost", RESPONSE_FILE);
         
         sendDriverData("foo");
-		
-		stopTCPClientDump();
+        
+        stopTCPClientDump();
     }
     catch(exception &e) {
         string err = e.what();

@@ -107,7 +107,7 @@ void PublisherList::add(Publisher *publisher) {
     LOG(DEBUG) << "Checking for duplicate publisher";
 	for(i = m_oPublishers.begin(); i != m_oPublishers.end(); i++) {
     	if(publisher->compare(*i)) {
-			LOG(DEBUG2) << "Duplicate publisher found.  Not adding";
+			LOG(DEBUG2) << "Duplicate publisher type " << publisher->publisherType() << " found.  Not adding";
 	        return;
 		}
     }
@@ -135,7 +135,10 @@ void PublisherList::addUnique(Publisher *publisher) {
 	for(i = m_oPublishers.begin(); i != m_oPublishers.end(); i++) {
     	if(publisher->publisherType() == (*i)->publisherType()) {
 			LOG(DEBUG2) << "Found duplicate type, removing old publisher";
-	        m_oPublishers.remove(*i);		
+	        m_oPublishers.remove(*i);
+	        // break out here to avoid crashing; list iterator gets mixed up
+	        // if we continue looping here.
+	        break;
 	    }
     }
 	

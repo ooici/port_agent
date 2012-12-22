@@ -11,6 +11,7 @@
 #include "config/port_agent_config.h"
 #include "connection/observatory_connection.h"
 #include "connection/instrument_tcp_connection.h"
+#include "connection/instrument_serial_connection.h"
 #include "packet/packet.h"
 #include "packet/buffered_single_char.h"
 
@@ -234,8 +235,16 @@ void PortAgent::initializeObservatoryCommandConnection() {
  * this method will need to support more types.
  ******************************************************************************/
 void PortAgent::initializeInstrumentConnection() {
-    if(m_pConfig->instrumentConnectionType() == TYPE_TCP)
+    if (m_pConfig->instrumentConnectionType() == TYPE_TCP) {
         initializeTCPInstrumentConnection();
+    }
+    if (m_pConfig->instrumentConnectionType() == TYPE_SERIAL) {
+        initializeSerialInstrumentConnection();
+    }
+    else {
+        LOG(ERROR) << "Instrument connection type not recognized.";
+   }
+
 }
 
 /******************************************************************************
@@ -262,7 +271,7 @@ void PortAgent::initializeTCPInstrumentConnection() {
         m_pInstrumentConnection = connection = new InstrumentTCPConnection();
        
     // If we have changed out configuration the set the new values and try to connect
-    if(connection->dataHost() != m_pConfig->instrumentAddr() ||
+    if (connection->dataHost() != m_pConfig->instrumentAddr() ||
        connection->dataPort() != m_pConfig->instrumentDataPort() ) {
         LOG(INFO) << "Detected connection configuration change.  reconfiguring.";
         
@@ -272,7 +281,7 @@ void PortAgent::initializeTCPInstrumentConnection() {
         connection->setDataPort(m_pConfig->instrumentDataPort());
     }
     
-    if(!connection->connected()) {
+    if (!connection->connected()) {
         LOG(DEBUG) << "Instrument not connected, attempting to reconnect";
         LOG(DEBUG2) << "host: " << connection->dataHost() << " port: " << connection->dataPort();
         
@@ -294,6 +303,76 @@ void PortAgent::initializeTCPInstrumentConnection() {
     
     if(connection->connected())
         setState(STATE_CONNECTED);
+}
+
+/******************************************************************************
+ * Method: initializeSerialInstrumentConnection
+ * Description: Connect to a Serial type instrument.
+ *
+ * State Transitions:
+ *  Connected - if we can connect to an instrument
+ *  Disconnected - if we fail to connect to an instrument
+ ******************************************************************************/
+void PortAgent::initializeSerialInstrumentConnection() {
+    InstrumentSerialConnection *connection = (InstrumentSerialConnection *) m_pInstrumentConnection;
+
+    // Clear if we have already initialized the wrong type
+    if (connection && connection->connectionType() != PACONN_INSTRUMENT_SERIAL) {
+        LOG(INFO) << "Detected connection type change.  rebuilding connection.";
+        delete connection;
+        connection = NULL;
+    }
+
+    // Create the connection object
+    if (!connection) {
+        m_pInstrumentConnection = connection = new InstrumentSerialConnection();
+        connection->setDevicePath(m_pConfig->devicePath());
+    }
+
+    if (m_pConfig->devicePathChanged() || !connection->connected()) {
+        LOG(INFO) << "Detected device path change or not opened.  closing and reopening.";
+        m_pInstrumentConnection->initialize();
+        m_pConfig->clearDevicePathChanged();
+
+        // If the devicePath has changed, we need to initialize the serial settings
+        // regardless of whether they have changed.
+        if (initializeSerialSettings()) {
+            m_pConfig->clearSerialSettingsChanged();  // clear so we don't re-initialize
+        }
+    }
+
+    // If any of the serial settings have changed, reinitialize them.
+    if (m_pConfig->serialSettingsChanged() && connection->connected()) {
+        LOG(INFO) << "Detected connection configuration change.  reconfiguring.";
+        initializeSerialSettings();
+        m_pConfig->clearSerialSettingsChanged();
+    }
+
+    if (connection->connected()) {
+        setState(STATE_CONNECTED);
+    }
+    else {
+        setState(STATE_DISCONNECTED);
+    }
+}
+
+
+/******************************************************************************
+ * Method: initializeSerialSettings
+ * Description: initialize serial settings; can be done independently of opening
+ * the device driver (i.e., we can change serial settings without closing the
+ * device driver and re-opening).
+ ******************************************************************************/
+bool PortAgent::initializeSerialSettings() {
+    InstrumentSerialConnection *pConnection = (InstrumentSerialConnection *) m_pInstrumentConnection;
+
+    pConnection->setBaud(m_pConfig->baud());
+    pConnection->setFlowControl(m_pConfig->flow());
+    pConnection->setStopBits(m_pConfig->stopbits());
+    pConnection->setDataBits(m_pConfig->databits());
+    pConnection->setParity(m_pConfig->parity());
+    return pConnection->initializeSerialSettings();
+
 }
 
 /******************************************************************************
@@ -468,7 +547,7 @@ void PortAgent::initializePublisherUDP() {
  *   commands - newline delimeted string of port agent commands.
  ******************************************************************************/
 void PortAgent::handlePortAgentCommand(const char * commands) {
-    LOG(DEBUG2) << "DATA: " << commands;
+    LOG(DEBUG2) << "COMMAND DATA: " << commands;
     
     if(!m_pConfig)
         return;
@@ -477,9 +556,11 @@ void PortAgent::handlePortAgentCommand(const char * commands) {
     
     processPortAgentCommands();
     // TODO: Add code for commands. i.e. Configuration Update, shutdown, etc...
-    
-    if(m_pConfig->isConfigured())
-        setState(STATE_CONFIGURED);
+
+    // TODO: This messes things up; when a command like BREAK comes in, we don't
+    // want to go to STATE_CONFIGURED.
+    //if(m_pConfig->isConfigured())
+    //    setState(STATE_CONFIGURED);
 }
 
 /******************************************************************************
@@ -516,6 +597,8 @@ void PortAgent::processPortAgentCommands() {
                 break;
             case CMD_BREAK:
                 LOG(DEBUG) << "break command";
+                m_pInstrumentConnection->sendBreak(m_pConfig->breakDuration());
+
                 break;
             case CMD_SHUTDOWN:
                 LOG(DEBUG) << "shutdown command";

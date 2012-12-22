@@ -115,7 +115,6 @@ class LoggerOpenFailure : public OOIException {
         OOIException("Failed to open log file", 204, msg) {}
 };
 
-
 /*******************************************************************************
  * Socket Exceptions
  ******************************************************************************/
@@ -243,5 +242,14 @@ class NotInitialized : public OOIException {
     public: NotInitialized(const string & msg = "") :
         OOIException("Uninitialized socket operation", 802, msg) {}
 };
+
+/*******************************************************************************
+ * Device Exceptions
+ ******************************************************************************/
+class DeviceOpenFailure : public OOIException {
+    public: DeviceOpenFailure(const string & msg = "") :
+        OOIException("Failed to open device path. ", 904, msg) {}
+};
+
 
 #endif //EXCEPTION_H_

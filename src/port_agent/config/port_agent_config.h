@@ -87,11 +87,13 @@ namespace port_agent {
             // Set methods
             bool setObservatoryDataPort(const string &param);
             bool setObservatoryCommandPort(const string &param);
+            bool setInstrumentBreakDuration(const string &param);
             bool setInstrumentConnectionType(const string &param);
             bool setSentinleSequence(const string &param);
             bool setOutputThrottle(const string &param);
             bool setMaxPacketSize(const string &param);
             bool setLogLevel(const string &param);
+            bool setDevicePath(const string &param);
             bool setBaud(const string &param);
             bool setStopbits(const string &param);
             bool setDatabits(const string &param);
@@ -127,14 +129,19 @@ namespace port_agent {
             uint32_t outputThrottle() { return m_outputThrottle; }
             uint32_t maxPacketSize() { return m_maxPacketSize; }
             
-            
+            bool    devicePathChanged() { return m_bDevicePathChanged; }
+            void    clearDevicePathChanged() { m_bDevicePathChanged = false; }
+            bool    serialSettingsChanged() { return m_bSerialSettingsChanged; }
+            void    clearSerialSettingsChanged() { m_bSerialSettingsChanged = false; }
+            const string & devicePath() { return m_devicePath; }
+            uint32_t breakDuration() { return m_breakDuration; }
             uint32_t baud() { return m_baud; }
- 	    uint16_t stopbits() { return m_stopbits; }
- 	    uint16_t databits() { return m_databits; }
- 	    uint16_t parity() { return m_parity; }
- 	    uint16_t flow() { return m_flow; }
-	    const string & instrumentAddr() { return m_instrumentAddr; }
- 	    uint16_t instrumentDataPort() { return m_instrumentDataPort; }
+            uint16_t stopbits() { return m_stopbits; }
+            uint16_t databits() { return m_databits; }
+            uint16_t parity() { return m_parity; }
+            uint16_t flow() { return m_flow; }
+            const string & instrumentAddr() { return m_instrumentAddr; }
+            uint16_t instrumentDataPort() { return m_instrumentDataPort; }
             uint16_t instrumentCommandPort() { return m_instrumentCommandPort; }
             
         private:
@@ -180,13 +187,17 @@ namespace port_agent {
             
             InstrumentConnectionType m_instrumentConnectionType;
             
+            bool    m_bDevicePathChanged;
+            bool    m_bSerialSettingsChanged;
+            string  m_devicePath;
+            uint32_t m_breakDuration;
             uint32_t m_baud;
- 	    uint16_t m_stopbits;
- 	    uint16_t m_databits;
- 	    uint16_t m_parity;
- 	    uint16_t m_flow;
-	    string m_instrumentAddr;
- 	    uint16_t m_instrumentDataPort;
+            uint16_t m_stopbits;
+            uint16_t m_databits;
+            uint16_t m_parity;
+            uint16_t m_flow;
+            string m_instrumentAddr;
+            uint16_t m_instrumentDataPort;
             uint16_t m_instrumentCommandPort;
     };
 }
