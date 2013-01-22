@@ -110,19 +110,36 @@ bool SerialCommSocket::initialize() {
  ******************************************************************************/
 bool SerialCommSocket::initialize() {
     bool bReturnCode = true;
+    string infoString;
+    ostringstream os;
 
     if (m_pSocketFD) {
+        os << "Device already open: " << m_sDevicePath << ". Closing and reopening.";
+        infoString = os.str();
+        LOG(INFO) << infoString;
         close(m_pSocketFD);
     }
+
+    os << "Opening: " << m_sDevicePath;
+    infoString = os.str();
+    LOG(INFO) << infoString;
+
     m_pSocketFD = open(m_sDevicePath.c_str(), O_RDWR);
     if (0 > m_pSocketFD) {
-        ostringstream os;
         os << "Failed to open device: " << m_sDevicePath << ": " << strerror(errno);
-        string errorString = os.str();
-        LOG(ERROR) << errorString;
-        throw DeviceOpenFailure(errorString);
+        infoString = os.str();
+        LOG(ERROR) << infoString;
+        // DHE: I've noticed that without this, CPU runs to 99/100 percent.
+        // Doesn't seem like the select() sleep is working.  This definitely
+        // helps; leaving it in until select() sleep is resolved.
+        sleep(OPEN_FAIL_SLEEP_TIME);
+        throw DeviceOpenFailure(infoString);
         bReturnCode = false;
     }
+
+    os << "Opened: " << m_sDevicePath;
+    infoString = os.str();
+    LOG(INFO) << infoString;
 
     return bReturnCode;
 }
