@@ -32,7 +32,10 @@ namespace publisher {
         protected:
             virtual bool handleInstrumentData(Packet *packet)     { return logPacket(packet); }
             virtual bool handleDriverData(Packet *packet)         { return logPacket(packet); }
-            virtual bool handleCommand(Packet *packet)            { return logPacket(packet); }
+            // DHE: I had to change this because the command port is ephemeral; can't publish to
+            // it unless the code handles broken pipe better.
+            //virtual bool handleCommand(Packet *packet)            { return logPacket(packet); }
+            virtual bool handleCommand(Packet *packet)            { return true; }
             virtual bool handleStatus(Packet *packet)             { return logPacket(packet); }
             virtual bool handleFault(Packet *packet)              { return logPacket(packet); }
             virtual bool handleDriverCommand(Packet *packet)      { return logPacket(packet); }

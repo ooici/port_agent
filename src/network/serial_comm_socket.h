@@ -18,6 +18,8 @@ using namespace std;
 using namespace logger;
 using namespace network;
 
+#define OPEN_FAIL_SLEEP_TIME 1
+
 namespace network {
 
     const uint16_t FLOW_CONTROL_NONE     = 0;

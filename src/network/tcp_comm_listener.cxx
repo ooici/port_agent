@@ -210,7 +210,7 @@ uint32_t TCPCommListener::writeData(const char *buffer, const uint32_t size) {
 	}
 
     if(! connected()) {
-		LOG(WARNING) << "Socket not connected";
+		LOG(WARNING) << "Socket (FD: " << m_pClientFD << ") not connected";
 		return 0;
     }
     
@@ -258,12 +258,12 @@ uint32_t TCPCommListener::readData(char *buffer, const uint32_t size) {
         throw(SocketNotConnected());
     
     if ((bytesRead = read(m_pClientFD, buffer, size)) < 0) {
-        if(errno == EAGAIN || errno == EINPROGRESS) {
+        if (errno == EAGAIN || errno == EINPROGRESS) {
             LOG(DEBUG2) << "Error Ignored: " << strerror(errno);
-	} else if( errno = ETIMEDOUT ) {
-            LOG(DEBUG) << " -- socket read timeout. disconnecting client.";
+        } else if( errno == ETIMEDOUT ) {
+            LOG(DEBUG) << " -- socket read timeout. disconnecting client FD:" << m_pClientFD;
             disconnectClient();
-	} else {
+        } else {
             LOG(ERROR) << "bytes read: " << bytesRead << " read_device: " << strerror(errno) << "(errno: " << errno << ")";
             throw(SocketReadFailure(strerror(errno)));
         }
@@ -271,7 +271,7 @@ uint32_t TCPCommListener::readData(char *buffer, const uint32_t size) {
         LOG(DEBUG2) << "read bytes: " << bytesRead;
     }
     else if(bytesRead == 0) {
-        LOG(INFO) << " -- Device connection closed. zero bytes recv.";
+        LOG(INFO) << " -- Device connection closed; zero bytes received.";
         disconnectClient();
     }
     else

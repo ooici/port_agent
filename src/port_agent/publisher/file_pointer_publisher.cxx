@@ -200,7 +200,7 @@ bool FilePointerPublisher::logPacket(Packet *packet) {
  * we fail to write the entire packet.
  *
  * Parameter:
- *    char* - the buffer that we are writting.
+ *    char* - the buffer that we are writing.
  *    size - how many bytes?
  *
  * Exceptions:
@@ -221,7 +221,7 @@ bool FilePointerPublisher::write(const char *buffer, uint32_t size) {
 	if(m_pFilePointer == NULL && m_pCommSocket == NULL)
 		throw FileDescriptorNULL();
 	
-    if(m_pCommSocket && ! m_pCommSocket->connected()) {
+    if (m_pCommSocket && ! m_pCommSocket->connected()) {
 		LOG(DEBUG) << "Not connected.";
 	    m_pCommSocket->connectClient();
     }

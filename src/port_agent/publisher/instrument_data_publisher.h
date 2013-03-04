@@ -32,6 +32,7 @@ namespace publisher {
 
         protected:
             virtual bool handleDriverData(Packet *packet);
+            virtual bool handleHeartbeat(Packet *packet)        { return true; }
 
         private:
         
