@@ -40,7 +40,7 @@ TEST_F(DriverCommandPublisherTest, SingleAsciiOut) {
 	DriverCommandPublisher publisher;
 	EXPECT_TRUE(testPublish(publisher, DATA_FROM_DRIVER, true));
 	EXPECT_TRUE(testPublish(publisher, DATA_FROM_INSTRUMENT, true));
-	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_COMMAND, true));
+	//EXPECT_TRUE(testPublish(publisher, PORT_AGENT_COMMAND, true));
 	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_STATUS, true));
 	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_FAULT, true));
 	EXPECT_TRUE(testPublish(publisher, INSTRUMENT_COMMAND, true));
@@ -53,7 +53,7 @@ TEST_F(DriverCommandPublisherTest, SingleBinaryOut) {
 	// It shouldn't matter if the binary flag is set, but let's test anyway.
 	EXPECT_TRUE(testPublish(publisher, DATA_FROM_DRIVER, false));
 	EXPECT_TRUE(testPublish(publisher, DATA_FROM_INSTRUMENT, false));
-	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_COMMAND, false));
+	//EXPECT_TRUE(testPublish(publisher, PORT_AGENT_COMMAND, false));
 	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_STATUS, false));
 	EXPECT_TRUE(testPublish(publisher, PORT_AGENT_FAULT, false));
 	EXPECT_TRUE(testPublish(publisher, INSTRUMENT_COMMAND, false));
