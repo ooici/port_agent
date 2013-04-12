@@ -57,14 +57,48 @@ namespace port_agent {
     } PortAgentCommand;
     typedef list<PortAgentCommand>  CommandQueue;
     
+    typedef enum ObservatoryConnectionType
+    {
+        OBS_TYPE_UNKNOWN       = 0x00000000,
+        OBS_TYPE_STANDARD      = 0x00000001,
+        OBS_TYPE_MULTI         = 0x00000002,
+    } ObservatoryConnectionType;
+
     typedef enum InstrumentConnectionType
     {
         TYPE_UNKNOWN           = 0x00000000,
         TYPE_SERIAL            = 0x00000001,
         TYPE_TCP               = 0x00000002,
-        TYPE_RSN               = 0x00000003
+        TYPE_BOTPT             = 0x00000003,
+        TYPE_RSN               = 0x00000004
     } InstrumentConnectionType;
+
+    // DHE NEW: a list of data port entries; in the future the ObservatoryDataPortEntry_T
+    // can be extended to be a structure including a routing key.  Also, the fact that
+    // it's a list should be abstracted, so that we can change it to a map for faster
+    // lookup in the future.
+    typedef int ObservatoryDataPortEntry_T;
+    typedef list<ObservatoryDataPortEntry_T> ObservatoryDataPorts_T;
     
+    // A singleton class that contains observatory data ports, and provides operations
+    // such as add, delete, etc.
+    class ObservatoryDataPorts {
+        public:
+            static  ObservatoryDataPorts* instance();
+            void    logPorts();
+            bool    addPort(const int port);
+            const int getFirstPort();
+            const int getNextPort();
+
+        private:
+            // CTOR
+            ObservatoryDataPorts();
+
+            static ObservatoryDataPorts* m_pInstance;
+            ObservatoryDataPorts_T        m_observatoryDataPorts;
+            ObservatoryDataPorts_T::iterator m_portIt;
+    };
+
     class PortAgentConfig {
         public:
             ///////////////////////
@@ -90,7 +124,11 @@ namespace port_agent {
             bool parse(const string &commands);
             
             // Set methods
+            bool setObservatoryConnectionType(const string &param);
             bool setObservatoryDataPort(const string &param);
+            // DHE: new name for now; might be called setObservatoryDataPort
+            // when replaces, but that name isn't as descriptive
+            bool addObservatoryDataPort(const string &param);
             bool setObservatoryCommandPort(const string &param);
             bool setInstrumentBreakDuration(const string &param);
             bool setInstrumentConnectionType(const string &param);
@@ -106,6 +144,8 @@ namespace port_agent {
             bool setParity(const string &param);
             bool setFlow(const string &param);
             bool setInstrumentDataPort(const string &param);
+            bool setInstrumentDataTxPort(const string &param);
+            bool setInstrumentDataRxPort(const string &param);
             bool setInstrumentCommandPort(const string &param);
             bool setRotationInterval(const string &param);
 			bool setTelnetSnifferPort(const string &param);
@@ -136,6 +176,7 @@ namespace port_agent {
             unsigned int observatoryCommandPort() { return m_observatoryCommandPort; }
             unsigned int observatoryDataPort() { return m_observatoryDataPort; }
             
+            ObservatoryConnectionType observatoryConnectionType() { return m_observatoryConnectionType; }
             InstrumentConnectionType instrumentConnectionType() { return m_instrumentConnectionType; }
             const string & sentinleSequence() { return m_sentinleSequence; }
             uint32_t outputThrottle() { return m_outputThrottle; }
@@ -155,6 +196,8 @@ namespace port_agent {
             uint16_t flow() { return m_flow; }
             const string & instrumentAddr() { return m_instrumentAddr; }
             uint16_t instrumentDataPort() { return m_instrumentDataPort; }
+            uint16_t instrumentDataTxPort() { return m_instrumentDataTxPort; }
+            uint16_t instrumentDataRxPort() { return m_instrumentDataRxPort; }
             uint16_t instrumentCommandPort() { return m_instrumentCommandPort; }
 			
 			// Telnet sniffer config
@@ -203,6 +246,7 @@ namespace port_agent {
             uint32_t m_outputThrottle;
             uint32_t m_maxPacketSize;
             
+            ObservatoryConnectionType m_observatoryConnectionType;
             InstrumentConnectionType m_instrumentConnectionType;
             RotationType m_eRotationInterval;
 			
@@ -219,6 +263,8 @@ namespace port_agent {
             uint16_t m_flow;
             string m_instrumentAddr;
             uint16_t m_instrumentDataPort;
+            uint16_t m_instrumentDataTxPort;
+            uint16_t m_instrumentDataRxPort;
             uint16_t m_instrumentCommandPort;
 			
 			// Telnet sniffer config

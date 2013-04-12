@@ -22,8 +22,10 @@ namespace port_agent {
     typedef enum PortAgentConnectionType {
         PACONN_UNKNOWN              = 0x00,
         PACONN_OBSERVATORY_STANDARD = 0x01,
-        PACONN_INSTRUMENT_TCP       = 0x02,
-        PACONN_INSTRUMENT_SERIAL    = 0x03
+        PACONN_OBSERVATORY_MULTI    = 0x02,
+        PACONN_INSTRUMENT_TCP       = 0x03,
+        PACONN_INSTRUMENT_BOTPT     = 0x04,
+        PACONN_INSTRUMENT_SERIAL    = 0x05
     } PortAgentConnectionType;
     
     class Connection {

@@ -66,7 +66,11 @@ namespace port_agent {
             void addObservatoryCommandListenerFD(int &maxFD, fd_set &readFDs);
             void addObservatoryCommandClientFD(int &maxFD, fd_set &readFDs);
             void addObservatoryDataListenerFD(int &maxFD, fd_set &readFDs);
+            void addObservatoryStandardDataListenerFD(int &maxFD, fd_set &readFDs);
+            void addObservatoryMultiDataListenerFDs(int &maxFD, fd_set &readFDs);
             void addObservatoryDataClientFD(int &maxFD, fd_set &readFDs);
+            void addObservatoryStandardDataClientFD(int &maxFD, fd_set &readFDs);
+            void addObservatoryMultiDataClientFDs(int &maxFD, fd_set &readFDs);
             void addInstrumentDataClientFD(int &maxFD, fd_set &readFDs);
             void addTelnetSnifferListenerFD(int &maxFD, fd_set &readFDs);
             
@@ -74,14 +78,17 @@ namespace port_agent {
             int getObservatoryCommandClientFD();
             int getObservatoryDataListenerFD();
             int getObservatoryDataClientFD();
-            int getInstrumentDataClientFD();
+            int getInstrumentDataRxClientFD();
+            int getInstrumentDataTxClientFD();
             int getTelnetSnifferListenerFD();
             
-            void initializeObservatoryConnection();
             void initializeObservatoryDataConnection();
+            void initializeObservatoryStandardDataConnection();
+            void initializeObservatoryMultiDataConnection();
             void initializeObservatoryCommandConnection();
             void initializeInstrumentConnection();
             void initializeTCPInstrumentConnection();
+            void initialize_BOTPT_InstrumentConnection();
             void initializeSerialInstrumentConnection();
             bool initializeSerialSettings();
             
@@ -89,6 +96,8 @@ namespace port_agent {
             void initializePublishers();
             void initializePublisherFile();
             void initializePublisherObservatoryData();    
+            void initializePublisherObservatoryStandardData();
+            void initializePublisherObservatoryMultiData();
             void initializePublisherObservatoryCommand();    
             void initializePublisherInstrumentData();    
             void initializePublisherInstrumentCommand();    
@@ -113,7 +122,11 @@ namespace port_agent {
             void handleObservatoryCommandAccept(const fd_set &readFDs);
             void handleObservatoryCommandRead(const fd_set &readFDs);
             void handleObservatoryDataAccept(const fd_set &readFDs);
+            void handleObservatoryStandardDataAccept(const fd_set &readFDs);
+            void handleObservatoryMultiDataAccept(const fd_set &readFDs);
             void handleObservatoryDataRead(const fd_set &readFDs);
+            void handleObservatoryStandardDataRead(const fd_set &readFDs);
+            void handleObservatoryMultiDataRead(const fd_set &readFDs);
             void handleInstrumentDataRead(const fd_set &readFDs);
             
             void publishHeartbeat();

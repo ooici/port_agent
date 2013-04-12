@@ -61,6 +61,9 @@ PortAgentConfig::PortAgentConfig(int argc, char* argv[]) {
     m_ppid = 0;
     m_telnetSnifferPort = 0;
     
+    // For backward compatibility, observatory connection defaults to standard
+    m_observatoryConnectionType = OBS_TYPE_STANDARD;
+
     m_instrumentConnectionType = TYPE_UNKNOWN;
     
     // Connection settings
@@ -72,6 +75,8 @@ PortAgentConfig::PortAgentConfig(int argc, char* argv[]) {
     m_parity = 0;
     m_flow = 0;
     m_instrumentDataPort = 0;
+    m_instrumentDataTxPort = 0;
+    m_instrumentDataRxPort = 0;
     m_instrumentCommandPort = 0;
     m_heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
     
@@ -312,6 +317,23 @@ bool PortAgentConfig::isConfigured() {
             ready = false;
         }
     }
+
+    if(instrumentConnectionType() == TYPE_BOTPT) {
+        if(! instrumentAddr().length()) {
+            LOG(DEBUG) << "Missing instrument address";
+            ready = false;
+        }
+
+        if(! instrumentDataTxPort()) {
+            LOG(DEBUG) << "Missing instrument data TX port";
+            ready = false;
+        }
+
+        if(! instrumentDataRxPort()) {
+            LOG(DEBUG) << "Missing instrument data RX port";
+            ready = false;
+        }
+    }
     
     if(instrumentConnectionType() == TYPE_RSN) {
         if(! instrumentCommandPort()) {
@@ -380,6 +402,8 @@ string PortAgentConfig::getConfig() {
                 out << "serial";
             else if(m_instrumentConnectionType == TYPE_TCP)
                 out << "tcp";
+            else if(m_instrumentConnectionType == TYPE_BOTPT)
+                out << "BOTPT";
             else if(m_instrumentConnectionType == TYPE_RSN)
                 out << "rsn";
             
@@ -409,6 +433,8 @@ string PortAgentConfig::getConfig() {
             << "flow " << m_flow << endl
             << "instrument_addr " << m_instrumentAddr << endl
             << "instrument_data_port " << m_instrumentDataPort << endl
+            << "instrument_data_tx_port " << m_instrumentDataTxPort << endl
+            << "instrument_data_rx_port " << m_instrumentDataRxPort << endl
             << "instrument_command_port " << m_instrumentCommandPort << endl;
             
         if(m_telnetSnifferPort) {
@@ -427,8 +453,8 @@ string PortAgentConfig::getConfig() {
 // Set Methods
 //////
 /******************************************************************************
- * Method: setInstrumentConnectionType
- * Description: Set the configuration instrument connection type
+ * Method: setInstrumentBreakDuration
+ * Description: Set the break duration
  * Return:
  *     return true if the type was set correctly, otherwise false for unknown
  *     types.
@@ -474,6 +500,11 @@ bool PortAgentConfig::setInstrumentConnectionType(const string &param) {
         m_instrumentConnectionType = TYPE_TCP;
     }
     
+    else if(param == "botpt") {
+        LOG(INFO) << "connection type set to botpt";
+        m_instrumentConnectionType = TYPE_BOTPT;
+    }
+
     else if(param == "rsn") {
         LOG(INFO) << "connection type set to rsn";
         m_instrumentConnectionType = TYPE_RSN;
@@ -485,6 +516,32 @@ bool PortAgentConfig::setInstrumentConnectionType(const string &param) {
         return false;
     }
     
+    return true;
+}
+
+/******************************************************************************
+ * Method: setObservatoryConnectionType
+ * Description: Set the configuration observatory connection type
+ * Return:
+ *     return true if the type was set correctly. Currently if type unknown,
+ *     printing error, returning false.
+ *****************************************************************************/
+bool PortAgentConfig::setObservatoryConnectionType(const string &param) {
+
+    if (param == "multi") {
+        LOG(INFO) << "observatory connection type set to multi";
+        m_observatoryConnectionType = OBS_TYPE_MULTI;
+    }
+    else if (param == "standard") {
+        LOG(INFO) << "observatory connection type set to standard";
+        m_observatoryConnectionType = OBS_TYPE_STANDARD;
+    }
+    else {
+        LOG(ERROR) << "unknown observatory connection type: " << param;
+        m_observatoryConnectionType = OBS_TYPE_UNKNOWN;
+        return false;
+    }
+
     return true;
 }
 
@@ -633,6 +690,45 @@ bool PortAgentConfig::setObservatoryDataPort(const string &param) {
 }
 
 /******************************************************************************
+ * Method: addObervatoryDataPort
+ * Description: Add the given observatory data port
+ * Param:
+ *     param - string represention of the value of the port.  If it is not
+ *     a number the value will be set to 0.
+ * Return:
+ *     return true if the throttle was set correctly, otherwise false.
+ *****************************************************************************/
+// DHE: there should be an object that encapsulates a list or map (or whatever)
+// of data port entries (which could include routing keys).  The object is
+// a singleton; the observatory data port container.
+bool PortAgentConfig::addObservatoryDataPort(const string &param) {
+    const char* v = param.c_str();
+
+    int value = atoi(v);
+    m_observatoryDataPort = 0;
+
+    if(value <= 0 || value > 65535) {
+        LOG(ERROR) << "Invalid port specification, setting to 0";
+        return false;
+    }
+
+    LOG(INFO) << "adding observatory data port: " << value;
+    //m_pObservatoryDataPorts->add(value);
+
+    // DHE NEW: for now keep this
+    m_observatoryDataPort = value;
+
+    if (false == ObservatoryDataPorts::instance()->addPort(value)) {
+        return false;
+    }
+
+    // DHE TEMPTEMP
+    ObservatoryDataPorts::instance()->logPorts();
+
+    return true;
+}
+
+/******************************************************************************
  * Method: setObervatoryCommandPort
  * Description: Set the observatory command port
  * Param:
@@ -679,6 +775,56 @@ bool PortAgentConfig::setInstrumentDataPort(const string &param) {
     
     LOG(INFO) << "set instrument data port to " << value;
     m_instrumentDataPort = value;
+    return true;
+}
+
+/******************************************************************************
+ * Method: setInstrumentDataTxPort
+ * Description: Set the instrument TX data port (BOTPT)
+ * Param:
+ *     param - string represention of the value of the port.  If it is not
+ *     a number the value will be set to 0.
+ * Return:
+ *     return true if the port was set correctly, otherwise false.
+ *****************************************************************************/
+bool PortAgentConfig::setInstrumentDataTxPort(const string &param) {
+    const char* v = param.c_str();
+
+    int value = atoi(v);
+    m_instrumentDataTxPort = 0;
+
+    if(value <= 0 || value > 65535) {
+        LOG(ERROR) << "Invalid port specification, setting to 0";
+        return false;
+    }
+
+    LOG(INFO) << "set instrument data port to " << value;
+    m_instrumentDataTxPort = value;
+    return true;
+}
+
+/******************************************************************************
+ * Method: setInstrumentDataRxPort
+ * Description: Set the instrument RX data port (BOTPT)
+ * Param:
+ *     param - string represention of the value of the port.  If it is not
+ *     a number the value will be set to 0.
+ * Return:
+ *     return true if the port was set correctly, otherwise false.
+ *****************************************************************************/
+bool PortAgentConfig::setInstrumentDataRxPort(const string &param) {
+    const char* v = param.c_str();
+
+    int value = atoi(v);
+    m_instrumentDataRxPort = 0;
+
+    if(value <= 0 || value > 65535) {
+        LOG(ERROR) << "Invalid port specification, setting to 0";
+        return false;
+    }
+
+    LOG(INFO) << "set instrument data port to " << value;
+    m_instrumentDataRxPort = value;
     return true;
 }
 
@@ -1100,6 +1246,11 @@ bool PortAgentConfig::processCommand(const string & command) {
         return setInstrumentConnectionType(param);
     }
     
+    else if(cmd == "observatory_type") {
+        addCommand(CMD_COMM_CONFIG_UPDATE);
+        return setObservatoryConnectionType(param);
+    }
+
     else if(cmd == "sentinle") {
         // We pass the entire command string to this incase there are \n or \r
         // embedded in the sentinle string.
@@ -1125,6 +1276,12 @@ bool PortAgentConfig::processCommand(const string & command) {
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setObservatoryDataPort(param);
     }
+
+    // DHE NEW:
+    else if(cmd == "add_data_port") {
+        addCommand(CMD_COMM_CONFIG_UPDATE);
+        return addObservatoryDataPort(param);
+    }
     
     else if(cmd == "command_port") {
         addCommand(CMD_COMM_CONFIG_UPDATE);
@@ -1136,6 +1293,16 @@ bool PortAgentConfig::processCommand(const string & command) {
         return setInstrumentDataPort(param);
     }
     
+    else if(cmd == "instrument_data_tx_port") {
+        addCommand(CMD_COMM_CONFIG_UPDATE);
+        return setInstrumentDataTxPort(param);
+    }
+
+    else if(cmd == "instrument_data_rx_port") {
+        addCommand(CMD_COMM_CONFIG_UPDATE);
+        return setInstrumentDataRxPort(param);
+    }
+
     else if(cmd == "instrument_command_port") {
         addCommand(CMD_COMM_CONFIG_UPDATE);
         return setInstrumentCommandPort(param);
@@ -1277,3 +1444,98 @@ bool PortAgentConfig::splitCommand(const string &raw, string & cmdResult, string
     paramResult = param;
     return true;
 }
+
+ObservatoryDataPorts* ObservatoryDataPorts::m_pInstance = 0;
+
+ObservatoryDataPorts::ObservatoryDataPorts() {
+
+}
+
+/******************************************************************************
+ * Method: instance()
+ * Description: Return a pointer to the singleton instance of the
+ * ObservatoryDataPorts container.  If the singleton does not yet exist, create
+ * it.
+ * Return: return a pointer to the instance.
+ ******************************************************************************/
+ObservatoryDataPorts* ObservatoryDataPorts::instance() {
+
+    if (0 == m_pInstance) {
+       m_pInstance = new ObservatoryDataPorts();
+    }
+
+    return m_pInstance;
+}
+
+/******************************************************************************
+ * Method: logPorts()
+ * Description: Log the ports
+ * Return: void
+ ******************************************************************************/
+void ObservatoryDataPorts::logPorts() {
+
+    list<ObservatoryDataPortEntry_T>::iterator i = m_observatoryDataPorts.begin();
+    int j = 0;
+    for(i = m_observatoryDataPorts.begin(); i != m_observatoryDataPorts.end(); i++) {
+        LOG(DEBUG) << "Data port: " << j << ", " << *i;
+        j++;
+    }
+}
+
+/******************************************************************************
+ * Method: addPort(const int port)
+ * Description: Add the given port to the container of ports.
+ * Return: return true if success, false if not.
+ ******************************************************************************/
+bool ObservatoryDataPorts::addPort(const int port) {
+    bool bRetVal = true;
+
+    LOG(DEBUG) << "ObservatoryDataPorts::addPort: Adding port: " << port;
+
+    // First remove any existing element with the same port value
+    m_observatoryDataPorts.remove(port);
+    m_observatoryDataPorts.push_back(port);
+
+    return bRetVal;
+}
+
+/******************************************************************************
+ * Method: getFirstPort
+ * Description: Get the first port from the container of ports.
+ * Return: value of first port if there is one, otherwize 0
+ ******************************************************************************/
+const int ObservatoryDataPorts::getFirstPort()
+{
+
+   // get the first cam agent
+   m_portIt = m_observatoryDataPorts.begin();
+
+   // if the first is the end, there are no ports in the list
+   if (m_portIt == m_observatoryDataPorts.end()) {
+      return 0;
+   }
+   else {
+      return *m_portIt;
+   }
+}
+
+/******************************************************************************
+ * Method: getNextPort
+ * Description: Get the next port from the container of ports.
+ * Return: value of next port if there is one, otherwize 0
+ ******************************************************************************/
+const int ObservatoryDataPorts::getNextPort()
+{
+
+   m_portIt++;
+
+   // if the next is the end, there are no more ports in the list
+   if (m_portIt == m_observatoryDataPorts.end()) {
+      return 0;
+   }
+   else {
+      return *m_portIt;
+   }
+}
+
+

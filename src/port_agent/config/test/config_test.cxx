@@ -172,7 +172,42 @@ TEST_F(CommonTest, Commands) {
     EXPECT_EQ(config.getCommand(), CMD_BREAK);
     EXPECT_EQ(config.getCommand(), CMD_SHUTDOWN);
 }
-        
+
+/* Test setting instrument connection type */
+TEST_F(CommonTest, SetObservatoryConnectionType) {
+    char* argv[] = { "port_agent_config_test", "-p", TEST_PORT };
+    int argc = sizeof(argv) / sizeof(char*);
+
+    PortAgentConfig config(argc, argv);
+
+    // Check the default observatory_type value (UNKNOWN)
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_STANDARD);
+
+    // STANDARD Observatory Connection
+    EXPECT_TRUE(config.parse("observatory_type standard"));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_STANDARD);
+
+    // MULTI Observatory Connection
+    EXPECT_TRUE(config.parse("observatory_type multi"));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_MULTI);
+
+    // Observatory type no parameter
+    EXPECT_FALSE(config.parse("observatory_type"));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_UNKNOWN);
+
+    // Observatory type trailing whitespace
+    EXPECT_FALSE(config.parse("observatory_type "));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_UNKNOWN);
+
+    // Observatory type trailing whitespace
+    EXPECT_FALSE(config.parse("observatory_type blah"));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_UNKNOWN);
+
+    // extra param
+    EXPECT_FALSE(config.parse("observatory_type multi blah"));
+    EXPECT_EQ(config.observatoryConnectionType(), OBS_TYPE_UNKNOWN);
+}
+
 /* Test setting instrument connection type */
 TEST_F(CommonTest, SetInstrumentConnectionType) {
     char* argv[] = { "port_agent_config_test", "-p", TEST_PORT };
@@ -182,10 +217,14 @@ TEST_F(CommonTest, SetInstrumentConnectionType) {
     
     // Check the default value (UNKNOWN)
     EXPECT_FALSE(config.instrumentConnectionType());
-    
+
     // TCP Connection
     EXPECT_TRUE(config.parse("instrument_type tcp"));
     EXPECT_EQ(config.instrumentConnectionType(), TYPE_TCP);
+    
+    // BOTPT Connection
+    EXPECT_TRUE(config.parse("instrument_type botpt"));
+    EXPECT_EQ(config.instrumentConnectionType(), TYPE_BOTPT);
     
     // Serial Connection
     EXPECT_TRUE(config.parse("instrument_type serial"));
@@ -475,6 +514,76 @@ TEST_F(CommonTest, SetInstrumentDataPort) {
     
     EXPECT_FALSE(config.parse("instrument_data_port "));
     EXPECT_EQ(config.instrumentDataPort(), 0);
+}
+
+/* Test setting the instrument data TX port parameter */
+TEST_F(CommonTest, SetInstrumentDataTxPort) {
+    char* argv[] = { "port_agent_config_test", "-p", TEST_PORT };
+    int argc = sizeof(argv) / sizeof(char*);
+    const char* buffer;
+    
+    PortAgentConfig config(argc, argv);
+    
+    EXPECT_EQ(config.maxPacketSize(), DEFAULT_PACKET_SIZE);
+    
+    EXPECT_TRUE(config.parse("instrument_data_tx_port 1"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 1);
+        
+    EXPECT_TRUE(config.parse("instrument_data_tx_port 65535"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 65535);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port 65536"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port 0"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port -11"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port ab"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port"));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_tx_port "));
+    EXPECT_EQ(config.instrumentDataTxPort(), 0);
+}
+
+/* Test setting the instrument data RX port parameter */
+TEST_F(CommonTest, SetInstrumentDataRxPort) {
+    char* argv[] = { "port_agent_config_test", "-p", TEST_PORT };
+    int argc = sizeof(argv) / sizeof(char*);
+    const char* buffer;
+    
+    PortAgentConfig config(argc, argv);
+    
+    EXPECT_EQ(config.maxPacketSize(), DEFAULT_PACKET_SIZE);
+    
+    EXPECT_TRUE(config.parse("instrument_data_rx_port 1"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 1);
+        
+    EXPECT_TRUE(config.parse("instrument_data_rx_port 65535"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 65535);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port 65536"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port 0"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port -11"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port ab"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port"));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
+    
+    EXPECT_FALSE(config.parse("instrument_data_rx_port "));
+    EXPECT_EQ(config.instrumentDataRxPort(), 0);
 }
 
 /* Test setting the log level */
