@@ -12,6 +12,7 @@
 #include "connection/observatory_connection.h"
 #include "connection/observatory_multi_connection.h"
 #include "connection/instrument_tcp_connection.h"
+#include "connection/instrument_rsn_connection.h"
 #include "connection/instrument_botpt_connection.h"
 #include "connection/instrument_serial_connection.h"
 #include "packet/packet.h"
@@ -54,9 +55,10 @@ using namespace port_agent;
 PortAgent::PortAgent() {
     m_pObservatoryConnection = NULL;
     m_pInstrumentConnection = NULL;
-    
+    m_pTelnetSnifferConnection = NULL;
     m_pConfig = NULL;
     m_oState = STATE_UNKNOWN;
+    m_rsnRawPacketDataBuffer = NULL;
 }
 
 /******************************************************************************
@@ -69,11 +71,20 @@ PortAgent::PortAgent(int argc, char *argv[]) {
     LOG(DEBUG) << "Initialize port agent with args";
     
     m_pConfig = new PortAgentConfig(argc, argv);
+
+    // RSN packet data buffer
+    if (m_pConfig->instrumentConnectionType() == TYPE_RSN) {
+        m_rsnRawPacketDataBuffer = new RawPacketDataBuffer(RSN_RAW_PACKET_BUFFER_SIZE, MAX_PACKET_SIZE, MAX_PACKET_SIZE);
+    }
+    else {
+        m_rsnRawPacketDataBuffer = NULL;
+    }
     setState(STATE_STARTUP);
     
     m_pInstrumentConnection = NULL;
     m_pObservatoryConnection = NULL;
     m_pTelnetSnifferConnection = NULL;
+
 }
 
 /******************************************************************************
@@ -94,6 +105,11 @@ PortAgent::~PortAgent() {
         delete m_pConfig;
         
     m_pConfig = NULL;
+
+    if (m_rsnRawPacketDataBuffer)
+        delete m_rsnRawPacketDataBuffer;
+
+    m_rsnRawPacketDataBuffer = NULL;
 }
 
 /******************************************************************************
@@ -331,6 +347,9 @@ void PortAgent::initializeInstrumentConnection() {
     else if (m_pConfig->instrumentConnectionType() == TYPE_SERIAL) {
         initializeSerialInstrumentConnection();
     }
+    else if (m_pConfig->instrumentConnectionType() == TYPE_RSN) {
+        initializeRSNInstrumentConnection();
+    }
     else {
         LOG(ERROR) << "Instrument connection type not recognized.";
    }
@@ -393,6 +412,69 @@ void PortAgent::initializeTCPInstrumentConnection() {
 
     if(connection->connected())
         setState(STATE_CONNECTED);
+}
+
+/******************************************************************************
+ * Method: initializeRSNInstrumentConnection
+ * Description: Connect to a RSN type instrument.
+ *
+ * State Transitions:
+ *  Connected - if we can connect to an instrument
+ *  Disconnected - if we fail to connect to an instrument
+ ******************************************************************************/
+void PortAgent::initializeRSNInstrumentConnection() {
+    InstrumentRSNConnection *connection = (InstrumentRSNConnection *)m_pInstrumentConnection;
+
+    // Clear if we have already initialized the wrong type
+    if(connection && connection->connectionType() != PACONN_INSTRUMENT_RSN) {
+        LOG(INFO) << "Detected connection type change.  rebuilding connection.";
+        delete connection;
+        connection = NULL;
+    }
+
+    // Create the connection object
+    if(!connection)
+        m_pInstrumentConnection = connection = new InstrumentRSNConnection();
+
+    // If we have changed out configuration then set the new values and try to connect
+    if (connection->dataHost() != m_pConfig->instrumentAddr() ||
+    		connection->dataPort() != m_pConfig->instrumentDataPort() ||
+    		connection->commandHost() != m_pConfig->instrumentAddr() ||
+    		connection->commandPort() != m_pConfig->instrumentCommandPort()) {
+    	LOG(INFO) << "Detected connection configuration change.  reconfiguring.";
+
+    	connection->disconnect();
+
+    	connection->setDataHost(m_pConfig->instrumentAddr());
+    	connection->setDataPort(m_pConfig->instrumentDataPort());
+    	connection->setCommandHost(m_pConfig->instrumentAddr());
+    	connection->setCommandPort(m_pConfig->instrumentCommandPort());
+    }
+
+    if (!connection->connected()) {
+        LOG(DEBUG) << "Instrument not connected, attempting to reconnect";
+        LOG(DEBUG2) << "host: " << connection->dataHost() << " data port: " << connection->dataPort()
+        		<< " command port: " << connection->commandPort();
+
+        setState(STATE_DISCONNECTED);
+
+        try {
+            connection->initialize();
+        }
+        catch(SocketConnectFailure &e) {
+            connection->disconnect();
+            string msg = e.what();
+            LOG(ERROR) << msg;
+        };
+
+        // Let everything connect
+        sleep(SELECT_SLEEP_TIME);
+    }
+
+
+    if(connection->connected())
+        setState(STATE_CONNECTED);
+
 }
 
 /******************************************************************************
@@ -862,7 +944,8 @@ void PortAgent::processPortAgentCommands() {
                 break;
             case CMD_BREAK:
                 LOG(DEBUG) << "break command";
-                m_pInstrumentConnection->sendBreak(m_pConfig->breakDuration());
+                publishBreak(m_pConfig->breakDuration());
+                //m_pInstrumentConnection->sendBreak(m_pConfig->breakDuration());
                 break;
             case CMD_ROTATION_INTERVAL:
                 LOG(DEBUG) << "set rotation interval";
@@ -921,6 +1004,12 @@ void PortAgent::handleStateConfigured(const fd_set &readFDs) {
     initializeObservatoryDataConnection();
     initializeInstrumentConnection();
     initializePublishers();
+
+    // connection/publisher initialized, so turn on timestamping
+    // from the RSN Digi
+	LOG(DEBUG) << "Turning timestamping on";
+	publishTimestamp(TIMESTAMP_BINARY);
+
 }
 
 /******************************************************************************
@@ -1047,6 +1136,7 @@ void PortAgent::poll() {
         handleCommon(readFDs);
             
         publishHeartbeat();
+
     }
     catch(UnknownState &e) {
         //re-throw the exception
@@ -1554,6 +1644,57 @@ void PortAgent::publishStatus(const string &msg) {
 }
 
 /******************************************************************************
+ * Method: publishBreak
+ * Description: Generate break command with specified duration and send it to
+ *  the publishers.
+ ******************************************************************************/
+void PortAgent::publishBreak(uint32_t iDuration) {
+    Timestamp ts;
+
+    char break_cmd[64] = "break ";
+    char durationStr[32];
+
+	// construct the break command
+	// syntax: break <duration>
+	sprintf(durationStr, "%d", iDuration);
+	strcat(break_cmd, durationStr);
+	strcat(break_cmd, "\n");
+
+    Packet packet(INSTRUMENT_COMMAND, ts, break_cmd, strlen(break_cmd));
+
+    LOG(DEBUG) << "Sending Break Command: " << break_cmd;
+    publishPacket(&packet);
+}
+
+/******************************************************************************
+ * Method: publishTimestamp
+ * Description: Generate timestamp command with specified value and send it to
+ *  the publishers.
+ ******************************************************************************/
+void PortAgent::publishTimestamp(uint32_t val) {
+    Timestamp ts;
+
+    // 0, 1, 2 are the only acceptable values for the timestamp
+    if(val < 0 || val > 2) {
+    	LOG(ERROR) << "Attempt to send Invalid Timestamp Command!";
+    }
+
+    char timestamp_cmd[64] = "time ";
+    char valStr[32];
+
+	// construct the timestamp command
+	// syntax: time <val>
+	sprintf(valStr, "%d", val);
+	strcat(timestamp_cmd, valStr);
+	strcat(timestamp_cmd, "\n");
+
+    Packet packet(INSTRUMENT_COMMAND, ts, timestamp_cmd, strlen(timestamp_cmd));
+
+    LOG(DEBUG) << "Sending Timestamp Command: " << timestamp_cmd;
+    publishPacket(&packet);
+}
+
+/******************************************************************************
  * Method: publishPacket
  * Description: Publish a packet. Just iterate over all publisher and call
  * the publish method.  Easy Peasy
@@ -1815,7 +1956,7 @@ void PortAgent::handleInstrumentDataRead(const fd_set &readFDs) {
 
     int clientFD = getInstrumentDataRxClientFD();
     int bytesRead = 0;
-    char buffer[MAX_PACKET_SIZE];
+    char buffer[MAX_PACKET_SIZE + HEADER_SIZE];
     unsigned int read_size;
     LOG(DEBUG) << "handleInstrumentDataRead - do we need to read from the instrument data";
     
@@ -1834,8 +1975,23 @@ void PortAgent::handleInstrumentDataRead(const fd_set &readFDs) {
         
         if(bytesRead) {
             LOG(DEBUG2) << "Bytes read: " << bytesRead;
-            publishPacket(buffer, bytesRead, DATA_FROM_INSTRUMENT);
-            //buffer[bytesRead] = '\0';
+            if (m_pConfig->instrumentConnectionType() == TYPE_RSN) {
+                m_rsnRawPacketDataBuffer->write(buffer, bytesRead);
+                Packet *packet = NULL;
+                while ((packet = m_rsnRawPacketDataBuffer->getNextPacket()) != NULL) {
+                    if(Logger::GetLogLevel() == MESG) {
+                        LOG(MESG) << "RSN Data Buffer Retrieved Packet:" << endl
+                                  << packet->pretty() << endl;
+                    }
+                    publishPacket(packet);
+                    delete packet;
+                    packet = NULL;
+                }
+            }
+            else {
+                publishPacket(buffer, bytesRead, DATA_FROM_INSTRUMENT);
+                //buffer[bytesRead] = '\0';
+            }
         }
     }
 }

@@ -155,7 +155,7 @@ string PortAgentConfig::conffile() {
  ******************************************************************************/
 string PortAgentConfig::datafile() {
     ostringstream out;
-    out << logdir() << "/" << BASE_FILENAME << "_"
+    out << datadir() << "/" << BASE_FILENAME << "_"
         << observatoryCommandPort();
     
     LOG(DEBUG) << "Data file: " << out.str();
@@ -480,6 +480,14 @@ bool PortAgentConfig::setInstrumentBreakDuration(const string &param) {
             LOG(INFO) << "attempt to set break duration to a negative.  using default.";
             value = DEFAULT_BREAK_DURATION;
         }
+        else if (value < MIN_BREAK_DURATION) {
+			LOG(INFO) << "attempt to set break duration to value below minimum allowed.  using min value.";
+			value = MIN_BREAK_DURATION;
+		}
+        else if (value > MAX_BREAK_DURATION) {
+			LOG(INFO) << "attempt to set break duration to value greater than maximum allowed.  using max value.";
+			value = MAX_BREAK_DURATION;
+		}
         m_breakDuration = value;
     }
 
@@ -558,7 +566,7 @@ bool PortAgentConfig::setObservatoryConnectionType(const string &param) {
  * Param:
  *     command - the entire command string to set the sentinle.  We do this
  *     because we need to do custom parsing for this command in case there is
- *     a CR or LF embedded in the sentinle. 
+ *     a CR or LF embedded in the sentinle.
  * Return:
  *     return true if the sequence was set correctly, otherwise false.
  *****************************************************************************/

@@ -126,7 +126,7 @@ bool Publisher::publish(Packet *packet) {
             return handleFault(packet);
 
 		case INSTRUMENT_COMMAND:
-            return handleInstrumentCommand(packet);
+			return handleInstrumentCommand(packet);
 
 		case PORT_AGENT_HEARTBEAT:
             return handleHeartbeat(packet);

@@ -276,12 +276,12 @@ TEST_F(CommonTest, SetSentinleSequence) {
     EXPECT_EQ(buffer[1], '\\');
     EXPECT_EQ(buffer[2], 0);
     
-    EXPECT_TRUE(config.parse("sentinle '\\n"));
+    EXPECT_TRUE(config.parse("sentinle '\\n'"));
     buffer = config.sentinleSequence().c_str();
     EXPECT_EQ(buffer[0], 10);
     EXPECT_EQ(buffer[1], 0);
     
-    EXPECT_TRUE(config.parse("sentinle "));
+    EXPECT_TRUE(config.parse("sentinle ''"));
     buffer = config.sentinleSequence().c_str();
     EXPECT_EQ(buffer[0], 0);
 }

@@ -13,6 +13,7 @@ noinst_PROGRAMS = observatory_connection_test
 observatory_connection_test_SOURCES = observatory_connection_test.cxx \
                                       observatory_multi_connection_test.cxx \
                                       instrument_tcp_connection_test.cxx \
+                                      instrument_rsn_connection_test.cxx \
                                       instrument_botpt_connection_test.cxx 
 
 observatory_connection_test_LDADD = $(DEPLIBS) -lgtest

@@ -7,6 +7,7 @@
 #include "connection/connection.h"
 #include "config/port_agent_config.h"
 #include "packet/packet.h"
+#include "packet/raw_packet_data_buffer.h"
 #include "publisher/publisher_list.h"
 
 #include <sys/select.h>
@@ -89,6 +90,7 @@ namespace port_agent {
             void initializeObservatoryCommandConnection();
             void initializeInstrumentConnection();
             void initializeTCPInstrumentConnection();
+            void initializeRSNInstrumentConnection();
             void initialize_BOTPT_InstrumentConnection();
             void initializeSerialInstrumentConnection();
             bool initializeSerialSettings();
@@ -134,6 +136,8 @@ namespace port_agent {
             void publishHeartbeat();
             void publishFault(const string &msg);
             void publishStatus(const string &msg);
+            void publishBreak(uint32_t iDuration);
+            void publishTimestamp(uint32_t val);
             void publishPacket(Packet *packet);
             void publishPacket(char *payload, uint16_t size, PacketType type);
 
@@ -153,10 +157,12 @@ namespace port_agent {
             PublisherList m_oPublishers;
             time_t m_lLastHeartbeat;
             
+            RawPacketDataBuffer *m_rsnRawPacketDataBuffer;
+
             // Port agent connections
             Connection *m_pObservatoryConnection;
             Connection *m_pInstrumentConnection;
-            
+
             // Publisher Connections
             TCPCommListener *m_pTelnetSnifferConnection;
             

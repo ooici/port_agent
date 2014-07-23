@@ -10,7 +10,8 @@ noinst_PROGRAMS = logger_test \
                   common_test \
 	              logger_test \
 	              timestamp_test \
-	              spawn_process_test 
+	              spawn_process_test \
+ 	              circular_buffer_test
 
 log_file_test_SOURCES = log_file_test.cxx 
 log_file_test_LDADD = $(DEPLIBS)
@@ -29,6 +30,9 @@ util_test_LDADD = $(DEPLIBS)
 
 timestamp_test_SOURCES = timestamp_test.cxx 
 timestamp_test_LDADD = $(DEPLIBS)
+
+circular_buffer_test_SOURCES = circular_buffer_test.cxx 
+circular_buffer_test_LDADD = $(DEPLIBS)
 
 TESTS = $(noinst_PROGRAMS)
 

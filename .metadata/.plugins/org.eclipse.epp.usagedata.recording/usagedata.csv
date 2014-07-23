@@ -1,0 +1,25 @@
+what,kind,bundleId,bundleVersion,description,time
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404925463869
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404925703644
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404925716846
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404925932701
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404925933018
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926115508
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926133047
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926386710
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926411884
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926648663
+started,bundle,org.eclipse.ltk.ui.refactoring,3.4.101.r352_v20100209,"org.eclipse.ltk.ui.refactoring",1404926655160
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926655244
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926666575
+executed,command,org.eclipse.ltk.ui.refactoring,3.4.101.r352_v20100209,"org.eclipse.ltk.ui.refactoring.commands.deleteResources",1404926666634
+executed,command,org.eclipse.ui,3.5.2.M20100120-0800,"org.eclipse.ui.edit.delete",1404926666634
+deactivated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926667920
+activated,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926669806
+closed,workbench,org.eclipse.ui.workbench,3.5.2.M20100113-0800,"",1404926669959
+error,log,,,"Problems saving workspace",1404926678962
+error,log,,,"Problems occurred while trying to save the state of the workbench.",1404926678963
+stopped,bundle,org.eclipse.cdt.debug.mi.ui,6.0.0.201002161416,"org.eclipse.cdt.debug.mi.ui",1404926679030
+stopped,bundle,org.eclipse.cdt.debug.mi.core,6.0.0.201002161416,"org.eclipse.cdt.debug.mi.core",1404926679032
+stopped,bundle,org.eclipse.cdt.dsf.gdb.ui,2.0.0.201002161416,"org.eclipse.cdt.dsf.gdb.ui",1404926679034
+stopped,bundle,org.eclipse.cdt.dsf.ui,2.0.1.201002161416,"org.eclipse.cdt.dsf.ui",1404926679036

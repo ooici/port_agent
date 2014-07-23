@@ -10,5 +10,6 @@ libcommon_a_SOURCES = logger.cxx logger.h \
                       daemon_process.cxx daemon_process.h \
                       spawn_process.cxx spawn_process.h \
 	              timestamp.cxx timestamp.h \
+	              circular_buffer.cxx circular_buffer.h \
                       exception.h 
 libcommon_a_CXXFLAGS = 

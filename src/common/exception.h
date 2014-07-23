@@ -251,5 +251,27 @@ class DeviceOpenFailure : public OOIException {
         OOIException("Failed to open device path. ", 904, msg) {}
 };
 
+/*******************************************************************************
+ * Raw Packet Data Buffer Exceptions
+ ******************************************************************************/
+class RawPacketDataBufferOverflow : public OOIException {
+    public: RawPacketDataBufferOverflow(const string & msg = "") :
+        OOIException("Max buffer size exceeded.", 1001, msg) {}
+};
+
+class RawPacketDataParamOutOfRange : public OOIException {
+    public: RawPacketDataParamOutOfRange(const string & msg = "") :
+        OOIException("Data buffer parameter out of range", 1002, msg) {}
+};
+
+class RawPacketDataReadError : public OOIException {
+    public: RawPacketDataReadError(const string & msg = "") :
+        OOIException("Data buffer read error", 1003, msg) {}
+};
+
+class RawPacketDataWriteError : public OOIException {
+    public: RawPacketDataWriteError(const string & msg = "") :
+        OOIException("Data buffer write error", 1004, msg) {}
+};
 
 #endif //EXCEPTION_H_
