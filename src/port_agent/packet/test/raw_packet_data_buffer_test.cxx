@@ -5,6 +5,7 @@
 #include "port_agent/config/port_agent_config.h"
 
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
 
