@@ -18,6 +18,7 @@
 #include "circular_buffer.h"
 
 #include <algorithm>
+#include <string.h>
 
 /******************************************************************************
  *   PUBLIC METHODS

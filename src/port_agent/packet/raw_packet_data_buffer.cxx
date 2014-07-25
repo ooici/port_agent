@@ -29,6 +29,7 @@
 
 #include <string>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 
 using namespace logger;

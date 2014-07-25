@@ -30,6 +30,7 @@
 #include "common/util.h"
 
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
 #include <stdlib.h>
